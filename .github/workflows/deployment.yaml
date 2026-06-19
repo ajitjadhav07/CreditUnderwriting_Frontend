@@ -15,7 +15,7 @@ jobs:
 
     env:
       AWS_REGION:        ap-south-1
-      FRONTEND_ECR_REPO: credit-underwriting-uat-frontend
+      FRONTEND_ECR_REPO: credit-underwriting-frontend
       IMAGE_TAG:         latest
 
     steps:
