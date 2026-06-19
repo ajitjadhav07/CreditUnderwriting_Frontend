@@ -1,0 +1,50 @@
+name: Build and Push Frontend Image
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build-and-push:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    env:
+      AWS_REGION:        ap-south-1
+      FRONTEND_ECR_REPO: credit-underwriting-uat-frontend
+      IMAGE_TAG:         latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── Frontend ───────────────────────────────────────────────────────────
+      - name: Build Frontend image
+        run: |
+          docker build \
+            -t ${{ env.FRONTEND_ECR_REPO }}:${{ env.IMAGE_TAG }} \
+            -f Dockerfile .
+
+      - name: Push Frontend image to ECR
+        run: |
+          docker tag \
+            ${{ env.FRONTEND_ECR_REPO }}:${{ env.IMAGE_TAG }} \
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_ECR_REPO }}:${{ env.IMAGE_TAG }}
+          docker push \
+            ${{ steps.login-ecr.outputs.registry }}/${{ env.FRONTEND_ECR_REPO }}:${{ env.IMAGE_TAG }}
+          echo "✅ Frontend image pushed to ECR"
